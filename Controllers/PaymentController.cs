@@ -33,7 +33,7 @@ namespace PaymentAPI.Controllers
 
             if(pay == null)
             {
-                return NotFound();
+                return StatusCode(404 , "Not Found");
             }
 
             return StatusCode(200 , pay);
@@ -46,13 +46,40 @@ namespace PaymentAPI.Controllers
             _context.PaymentDetail.Add(model);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(getdetail) , new { id = model.PaymentDetailsId} , model);
+            return CreatedAtAction(nameof(getdetailbyid) , new { id = model.PaymentDetailsId} , model);
         }
 
         [HttpPut]
         [Route("updatePayment/{id}")]
         public async Task<IActionResult> updatePayment(int id, PaymentDetails model)
         {
+            if(id != model.PaymentDetailsId)
+            {
+                return StatusCode(400 , "Bad Request");     
+            }
+
+            _context.Entry(model).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if(!PaymentDetailExist(id))
+                {
+                    return NotFound();
+                }else{
+                    throw;
+                }
+            }
+
+            return StatusCode(200 , "Updated !!!!!");
+        }
+
+        private bool PaymentDetailExist(int id)
+        {
+            throw new NotImplementedException();
         }
 
         [HttpDelete]
@@ -63,8 +90,14 @@ namespace PaymentAPI.Controllers
 
             if (payment == null)
             {
-                
+                return StatusCode(404 , "Not found");
             }
+
+            _context.PaymentDetail.Remove(payment);
+
+            await _context.SaveChangesAsync();
+
+            return StatusCode(200 , "Payment Deleted Successfully");
         }
     }
 }
